@@ -10,6 +10,7 @@ class PriceScreen extends StatefulWidget {
 
 class _PriceScreenState extends State<PriceScreen> {
   String selectedCurrency = 'AUD';
+  List<CryptoCard> cryptoCards = [];
 
   DropdownButton<String> androidDropdown() {
     List<DropdownMenuItem<String>> dropdownItems = [];
@@ -59,9 +60,19 @@ class _PriceScreenState extends State<PriceScreen> {
   //TODO 6: Update this method to receive a Map containing the crypto:price key value pairs. Then use that map to update the CryptoCards.
   void getData() async {
     try {
-      double data = await CoinData().getCoinData(selectedCurrency);
+      List<Map<String, dynamic>> data =
+          await CoinData().getCoinData(selectedCurrency);
       setState(() {
-        value = data.toStringAsFixed(0);
+        cryptoCards = [];
+        for (Map<String, String> coin in data) {
+          print(coin['rate']);
+          var card = CryptoCard(
+            selectedCurrency: selectedCurrency,
+            cryptoCurrency: coin['crypto'],
+            value: (value != null) ? coin['rate'] : '?',
+          );
+          cryptoCards.add(card);
+        }
       });
     } catch (e) {
       print(e);
@@ -74,7 +85,19 @@ class _PriceScreenState extends State<PriceScreen> {
     getData();
   }
 
-  //TODO: For bonus points, create a method that loops through the cryptoList and generates a CryptoCard for each.
+  void buildCryptoCards() {
+    setState(() {
+      cryptoCards = [];
+      for (String crypto in cryptoList) {
+        var card = CryptoCard(
+          selectedCurrency: selectedCurrency,
+          cryptoCurrency: crypto,
+          value: value,
+        );
+        cryptoCards.add(card);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,29 +109,8 @@ class _PriceScreenState extends State<PriceScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          //TODO 1: Refactor this Padding Widget into a separate Stateless Widget called CryptoCard, so we can create 3 of them, one for each cryptocurrency.
-          //TODO 2: You'll need to able to pass the selectedCurrency, value and cryptoCurrency to the constructor of this CryptoCard Widget.
-          //TODO 3: You'll need to use a Column Widget to contain the three CryptoCards.
-          Padding(
-            padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
-            child: Card(
-              color: Colors.lightBlueAccent,
-              elevation: 5.0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
-                child: Text(
-                  '1 BTC = $value $selectedCurrency',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
+          Column(
+            children: cryptoCards,
           ),
           Container(
             height: 150.0,
@@ -118,6 +120,39 @@ class _PriceScreenState extends State<PriceScreen> {
             child: Platform.isIOS ? iOSPicker() : androidDropdown(),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class CryptoCard extends StatelessWidget {
+  CryptoCard({this.selectedCurrency, this.cryptoCurrency, this.value});
+
+  final String selectedCurrency;
+  final String cryptoCurrency;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
+      child: Card(
+        color: Colors.lightBlueAccent,
+        elevation: 5.0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
+          child: Text(
+            '1 $cryptoCurrency = $value $selectedCurrency',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20.0,
+              color: Colors.white,
+            ),
+          ),
+        ),
       ),
     );
   }
